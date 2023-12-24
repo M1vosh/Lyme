@@ -96,7 +96,7 @@ function ProfileScreen() {
                     <Form.Label>Password</Form.Label>
                     <Form.Control
                         type='password'
-                        placeholder='Enter Password'
+                        placeholder='New Password'
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     >
@@ -108,7 +108,7 @@ function ProfileScreen() {
                     <Form.Label>Confirm Password</Form.Label>
                     <Form.Control
                         type='password'
-                        placeholder='Confirm Password'
+                        placeholder='Confirm New Password'
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                     >
