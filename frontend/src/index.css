@@ -22,3 +22,7 @@ h3{
 .btn-block{
     width: 100%
 }
+
+.navbar-custom {
+    background-color: #001f2c;
+}

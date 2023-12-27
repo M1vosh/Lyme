@@ -5,7 +5,8 @@ import { Button, Row, Col, ListGroup, Image, Card} from 'react-bootstrap'
 import { useDispatch, useSelector} from 'react-redux'
 import Message from '../components/Message'
 import Loader from '../components/Loader'
-import { getOrderDetails } from '../actions/orderActions'
+import { getOrderDetails, payOrder } from '../actions/orderActions'
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js"; 
 import moment from 'moment'
 //AXYF0U358O_oIdHcK9rpNqFgYrxlQiZHgr6RiuZ2A2H9eVEYPmRcMOGQbm1QSPGUfQLdtrntbATt4Yjf
 
@@ -17,17 +18,26 @@ function OrderScreen() {
     const dispatch = useDispatch()
 
     const orderDetails = useSelector(state => state.orderDetails)
-    const {order, error, loading} = orderDetails
+    const {order:orderDets, error, loading} = orderDetails
 
+
+    let itemsPrice
     if(!loading && !error){
-        order.itemsPrice =  order.orderItems.reduce((acc, item) => acc + item.price * item.qty, 0).toFixed(2)
+        itemsPrice =  orderDets.orderItems.reduce((acc, item) => acc + item.price * item.qty, 0).toFixed(2)
     }
 
+
     useEffect(() => {
-        if(!order || order._id !== Number(orderId)) {
+        if(!orderDets || orderDets._id !== Number(orderId)) {
             dispatch(getOrderDetails(orderId))
         }
-    }, [dispatch, order, orderId])
+    }, [dispatch, orderDets, orderId])
+
+    const successPaymentHandler = (paymentResult) => {
+        dispatch(payOrder(orderId,paymentResult))
+        window.location.reload()
+    }
+    
 
 
   return loading ? (
@@ -36,30 +46,30 @@ function OrderScreen() {
     <Message variant='danger'>{error}</Message>
   ) : (
     <div>
-        <h1>Order: {order._id}</h1>
+        <h1>Order: {orderDets._id}</h1>
         <Row>
             <Col md={8}>
                 <ListGroup variant='flush'>
                     <ListGroup.Item>
                         <h2>Shipping</h2>
-                        <p><strong>Name: </strong> {order.user.name} </p>
-                        <p><strong>Email: </strong><a href={`mailto:${order.user.email}`}>{order.user.email}</a></p>
+                        <p><strong>Name: </strong> {orderDets.user.name} </p>
+                        <p><strong>Email: </strong><a href={`mailto:${orderDets.user.email}`}>{orderDets.user.email}</a></p>
                         <p>
                             <strong>Shipping: </strong>
-                            {order.shippingAddress.address}, {order.shippingAddress.postalCode}
+                            {orderDets.shippingAddress.address}, {orderDets.shippingAddress.postalCode}
                             {'   '}
-                            {order.shippingAddress.city},
+                            {orderDets.shippingAddress.city},
                             {'   '}
-                            {order.shippingAddress.country}
+                            {orderDets.shippingAddress.country}
                         </p>
-                        {order.isDelivered ? (
+                        {orderDets.isDelivered ? (
                             <Message variant='success'>
-                                Your order has been delivered on{' '}{moment(order.deliveredAt).format('MMMM Do, YYYY')}
+                                Your order has been delivered on{' '}{moment(orderDets.deliveredAt).format('MMMM Do, YYYY')}
                             </Message>
-                        ) : !order.isPaid ? (
+                        ) : !orderDets.isPaid ? (
                             <Message variant='warning'>Waiting for payment...</Message>
                         ) : (
-                            <Message variant='info'>Your order is in the process of being packed and shipped</Message>
+                            <Message variant='info'>Your order is being processed</Message>
                         )}
                     </ListGroup.Item>
 
@@ -67,11 +77,11 @@ function OrderScreen() {
                         <h2>Payment Method</h2>
                         <p>
                             <strong>Method: </strong>
-                            {order.paymentMethod}
+                            {orderDets.paymentMethod}
                         </p>
-                        {order.isPaid ? (
+                        {orderDets.isPaid ? (
                             <Message variant='success'>
-                                Your order has been paid on{' '}{moment(order.paidAt).format('MMMM Do, YYYY')}
+                                Your order has been paid on{' '}{moment(orderDets.paidAt).format('MMMM Do, YYYY')}
                             </Message>
                         ) : (
                             <Message variant='warning'>Your order has not been paid yet</Message>
@@ -80,11 +90,11 @@ function OrderScreen() {
 
                     <ListGroup.Item>
                         <h2>Order Items</h2>
-                        {order.orderItems.length === 0 ? <Message variant='info'>
+                        {orderDets.orderItems.length === 0 ? <Message variant='info'>
                             Order is empty.
                         </Message> : (
                             <ListGroup variant='flush'>
-                                {order.orderItems.map((item, index) => (
+                                {orderDets.orderItems.map((item, index) => (
                                     <ListGroup.Item key={index}>
                                         <Row>
                                             <Col md={1}>
@@ -119,23 +129,48 @@ function OrderScreen() {
                         <ListGroup.Item>
                             <Row>
                                 <Col>Items:</Col>
-                                <Col>${order.itemsPrice}</Col>
+                                <Col>${itemsPrice}</Col>
                             </Row>
                         </ListGroup.Item>
 
                         <ListGroup.Item>
                             <Row>
                                 <Col>Shipping:</Col>
-                                <Col>${order.shippingPrice}</Col>
+                                <Col>${orderDets.shippingPrice}</Col>
                             </Row>
                         </ListGroup.Item>
 
                         <ListGroup.Item>
                             <Row>
                                 <Col>Total:</Col>
-                                <Col>${order.totalPrice}</Col>
+                                <Col>${orderDets.totalPrice}</Col>
                             </Row>
                         </ListGroup.Item>
+
+                        {!orderDets.isPaid && (
+                            <ListGroup.Item>
+                                <PayPalScriptProvider options={{ "client-id": "AXYF0U358O_oIdHcK9rpNqFgYrxlQiZHgr6RiuZ2A2H9eVEYPmRcMOGQbm1QSPGUfQLdtrntbATt4Yjf" }}>
+                                    <PayPalButtons 
+                                        className='mt-3'  
+                        
+                                        createOrder={(data,actions)=>{
+                                            return actions.order.create({
+                                                purchase_units: [
+                                                    {
+                                                        amount: {
+                                                            currency_code:'USD',
+                                                            value: orderDets.totalPrice,
+                                                        },
+                                                    },
+                                                ],
+                                            });
+                                        }}
+                                        onApprove={successPaymentHandler}
+                                    /> 
+                                </PayPalScriptProvider>
+                            </ListGroup.Item>
+                        )}
+
 
                     </ListGroup>
                 </Card>
