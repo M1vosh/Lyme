@@ -1,6 +1,6 @@
 import {configureStore, combineReducers} from '@reduxjs/toolkit'
 import {thunk} from 'redux-thunk'
-import {productListReducer, productDetailsReducer, productReviewCreateReducer,} from "./reducers/productReducers"
+import {productListReducer, productDetailsReducer, productReviewCreateReducer, productTopRatedReducer} from "./reducers/productReducers"
 import { cartReducer } from './reducers/cartReducers'
 import { userLoginReducer, userRegisterReducer, userDetailsReducer, userUpdateProfileReducer } from './reducers/userReducers'
 import { orderCreateReducer, orderDetailsReducer, orderPayReducer, orderListMyReducer } from './reducers/orderReducers'
@@ -9,6 +9,7 @@ const reducer = combineReducers({
     productList: productListReducer,
     productDetails: productDetailsReducer,
     productReviewCreate: productReviewCreateReducer,
+    productTopRated: productTopRatedReducer,
     cart: cartReducer,
     userLogin: userLoginReducer,
     userRegister: userRegisterReducer,

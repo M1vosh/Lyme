@@ -6,6 +6,7 @@ import Product from '../components/Product'
 import Loader from '../components/Loader'
 import Message from '../components/Message'
 import { listProducts } from '../actions/productActions'
+import ProductCarousel from '../components/ProductCarousel'
 //import axios from 'axios'
 
 function HomeScreen() {
@@ -25,19 +26,23 @@ function HomeScreen() {
 
   return (
     <div>
+      {!keyword && <ProductCarousel />}
       <h1>Latest products</h1>
-      {loading ? <Loader/>
-        : error ? <Message variant='danger'>{error}</Message>
-          : 
-          <Row>
-            {products.map(product => (
-              <Col key={product._id} sm={12} md={6} lg={4} xl={3}>
-                <Product product={product} />
-              </Col>
-            ))}
-          </Row>
-    }
-
+      {loading ? (
+        <Loader />
+      ) : error ? (
+        <Message variant='danger'>{error}</Message>
+      ) : products.length === 0 ? (
+        <Message variant='info'>No products matching the keyword.</Message>
+      ) : (
+        <Row>
+          {products.map((product) => (
+            <Col key={product._id} sm={12} md={6} lg={4} xl={3}>
+              <Product product={product} />
+            </Col>
+          ))}
+        </Row>
+      )}
     </div>
   )
 }
